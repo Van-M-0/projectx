@@ -1,2 +1,4 @@
 .idea/
 projectx.iml
+src/protocol/*.pb.go
+*.exe
