@@ -1,0 +1,8 @@
+
+syntax = "proto3";
+package protocol;
+
+enum ProtoID {
+    REGISTER_SERVER         = 1;
+
+}

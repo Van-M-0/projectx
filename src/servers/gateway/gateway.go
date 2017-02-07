@@ -6,10 +6,8 @@ import (
 	"projectx/src/components/tcpserver"
 	"fmt"
 	"net"
-	"log"
 	"projectx/src/protocol"
 	"projectx/src/util"
-	"github.com/golang/protobuf/proto"
 )
 
 type GateWay interface {
@@ -21,6 +19,7 @@ type gateway struct {
 	chs *queue.MultiChans
 	c config.MasterConfig
 	server tcpserver.Server
+	allserver *protocol.GetAllServerInfo
 }
 
 func NewGateWay() *gateway {
@@ -33,8 +32,6 @@ func NewGateWay() *gateway {
 }
 
 func (r *gateway) Start() {
-	r.chs.CreateChs(protocol.GATEWAY, 1024)
-	r.chs.CreateChs(protocol.MASTER, 1024)
 	r.connectserver()
 	r.server.Start(r.c.TcpServerConfig)
 	r.run()
@@ -46,26 +43,15 @@ func (r *gateway) Stop() {
 
 func (r *gateway) run() {
 	for {
-		r.handlecmd()
 		r.handleio()
-		r.handletimer()
 	}
 	fmt.Println("gateway run finish")
 }
 
 func (r *gateway) connectserver() {
 
-	const selfinfo = &protocol.ServerInfo{
-
-	}
-
 	connect := func(dsthost string, cb func()) {
 		conn, err := net.Dial("tcp", dsthost)
-		if err != nil {
-			cb(nil, err)
-		}
-
-		err = util.WritePacket(conn, selfinfo, 0)
 		if err != nil {
 			cb(nil, err)
 		}
@@ -76,27 +62,30 @@ func (r *gateway) connectserver() {
 	}
 
 	start_wait := new(util.WaitGroup)
-	var allservers protocol.GetAllServerInfo
 
 	// master
 	start_wait.DoAction(func() {
 		connect(":9090", func(conn net.Conn, err error) {
+			// register self server info
+			err = util.WritePacket(conn, &protocol.ServerInfo {
 
+			}, 0)
+
+			// get all server - lists
+			err = util.ReadPacket(conn, r.allserver)
 		})
 	})
+	start_wait.WaitActions()
 
 	// lobby
 	start_wait.DoAction(func() {
 		connect(":9399", func(conn net.Conn, err error) {
-			err = util.ReadPacket(conn, &allservers)
 		})
 	})
 
-	start_wait.WaitActions()
-
 	// game servers
 	gameservers :=[]*protocol.ServerInfo{}
-	for _, server := range(allservers.Servers) {
+	for _, server := range(r.allserver.Servers) {
 		if server.Type == "game server"	{
 			gameservers = append(gameservers, server)
 		}
@@ -117,18 +106,6 @@ func (r *gateway) connectserver() {
 	start_wait.WaitActions()
 }
 
-func (r *gateway) HandleRoutine(data []byte) {
-
-}
-
 func (r *gateway) handleio() {
-
-}
-
-func (r *gateway) handletimer() {
-
-}
-
-func (r *gateway) handlecmd() {
 
 }

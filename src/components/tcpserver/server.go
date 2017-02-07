@@ -64,12 +64,6 @@ func (r *server) newconn(conn net.Conn) {
 
 func (r *server) handleio(id uint32, conn net.Conn) {
 	defer conn.Close()
-	for {
-		data, err := util.ReadPacket(conn)
-		if err != nil {
-			log.Fatal("read packe err : ", err)
-		}
 
-		r.q.Push(id, data)
-	}
+
 }
