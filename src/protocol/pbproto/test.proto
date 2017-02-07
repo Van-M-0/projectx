@@ -1,0 +1,17 @@
+
+syntax = "proto3";
+
+package protocol;
+
+message helloworld
+{ 
+    int32     id = 1;  // ID 
+    string    str = 2;  // str 
+    int32     opt = 3;  //optional f
+}
+
+message person
+{
+    int32   len = 1;
+    string  info = 2;
+}
