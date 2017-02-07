@@ -17,7 +17,7 @@ var (
 	packetsizeerror = errors.New("packet size too small")
 	packettypeerror = errors.New("packet proto type err")
 	packetdataerror = errors.New("packet data error")
-
+	pakcetnameerr	= errors.New("packet read by name error")
 	common_header_size = proto.Size(baseproto.CommonHeader{})
 )
 
@@ -65,6 +65,17 @@ func test_parse_binary() {
 		fmt.Println("person is : ", p.Len, string(p.Info[0:p.Len]))
 	}
 
+}
+
+func ReadPacketByName(conn net.Conn, name string) (*protocol.Message, int32, error) {
+	m, r, err := ReadPacket(conn)
+	if err != nil {
+		return m, r, err
+	}
+	if m.Name() != name {
+		return nil, r, pakcetnameerr
+	}
+	return m, r, err
 }
 
 func ReadPacket(conn net.Conn) (*protocol.Message, int32, error) {

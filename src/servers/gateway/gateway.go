@@ -8,6 +8,7 @@ import (
 	"net"
 	"projectx/src/protocol"
 	"projectx/src/util"
+	"projectx/src/protocol/baseproto"
 )
 
 type GateWay interface {
@@ -16,10 +17,10 @@ type GateWay interface {
 }
 
 type gateway struct {
-	chs *queue.MultiChans
-	c config.MasterConfig
-	server tcpserver.Server
-	allserver *protocol.GetAllServerInfo
+	chs       *queue.MultiChans
+	c         config.MasterConfig
+	server    tcpserver.Server
+	serinfos  serverlist
 }
 
 func NewGateWay() *gateway {
@@ -67,12 +68,24 @@ func (r *gateway) connectserver() {
 	start_wait.DoAction(func() {
 		connect(":9090", func(conn net.Conn, err error) {
 			// register self server info
-			err = util.WritePacket(conn, &protocol.ServerInfo {
+			err = util.WritePacket(conn, &baseproto.RegisterServer {
 
 			}, 0)
 
 			// get all server - lists
-			err = util.ReadPacket(conn, r.allserver)
+			msg, router, err := util.ReadPacketByName(conn, "baseproto.AllServerInfo")
+
+			for _, v := range (msg.(&baseproto.AllServerInfo).Servers) {
+				r.serinfos.add(&serverpeer{
+					host: v.Ip,
+					port: v.Port,
+					server_type: v.Type,
+					id: v.Id,
+				})
+			}
+			s := r.serinfos.getbytype(util.SERVER_TYPE_MASTER)
+			r.serinfos.setconn(s.id, conn)
+			r.chs.CreateChs(s.id, 1024)
 		})
 	})
 	start_wait.WaitActions()
@@ -80,31 +93,29 @@ func (r *gateway) connectserver() {
 	// lobby
 	start_wait.DoAction(func() {
 		connect(":9399", func(conn net.Conn, err error) {
+			s := r.serinfos.getbytype(util.SERVER_TYPE_LOBBY)
+			r.serinfos.setconn(s.id, conn)
+			r.chs.CreateChs(s.id, 1024)
 		})
 	})
 
 	// game servers
-	gameservers :=[]*protocol.ServerInfo{}
-	for _, server := range(r.allserver.Servers) {
-		if server.Type == "game server"	{
-			gameservers = append(gameservers, server)
+	for _, server := range(r.serinfos.servers) {
+		if server.server_type == util.SERVER_TYPE_GAMESERVER {
+			start_wait.DoAction(func() {
+				connect(server.host, func(conn net.Conn, err error) {
+					s := r.serinfos.getbyid(server.id)
+					r.serinfos.setconn(s.id, conn)
+					r.chs.CreateChs(s.id, 1024)
+				})
+			})
 		}
 	}
-
-	if len(gameservers) <= 0 {
-		return
-	}
-
-	for _, gs := range(gameservers) {
-		start_wait.DoAction(func() {
-			connect(gs.Ip, func(conn net.Conn, err error) {
-
-			})
-		})
-	}
-
 	start_wait.WaitActions()
+
+	r.chs.CreateChs(-1, 4096)
 }
+
 
 func (r *gateway) handleio() {
 

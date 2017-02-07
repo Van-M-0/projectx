@@ -5,6 +5,11 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
+// reference package, init it
+var _ = baseproto.Null{}
+
+
+
 type Message struct {
 	proto.Message
 }
@@ -13,11 +18,8 @@ func (m *Message) Name() string {
 	return proto.MessageName(m.Message)
 }
 
-// reference package, init it
-var _ = baseproto.Null{}
 
-// 不采用 golang protobuf 的name反射机制
-// 用id-name实现, 减少网络数据包的消耗
+
 func GetProtoMessage(id int32) *Message {
 	msg, ok := proto_map_reflection[id]
 	if ok {
@@ -30,12 +32,13 @@ func create_message(pb proto.Message) *Message {
 	return &Message{Message:pb}
 }
 
+
+
 const (
 	COMMON_HEADER 	= 1
 
 	SERVER_REGISTER = 10001
 	SERVER_GETALL_SERVERS = 10002
-
 )
 
 
