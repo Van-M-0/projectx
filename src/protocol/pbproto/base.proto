@@ -1,6 +1,27 @@
 syntax = "proto3";
 package protocol;
 
+// headers difine
+// msg = header + specialmsg
 message CommonHeader {
-    uint32      len = 1;
+    uint32      magic   = 1;
+    uint32      ver     = 2;
+    uint32      len     = 3;
+    uint32      id      = 4;
+    uint32      router  = 5;
+}
+
+message ServerInfo {
+    uint32      type    = 1;
+    uint32      id      = 2;
+    string      ip      = 3;
+    uint32      port    = 4;
+}
+
+message RegisterServer {
+    ServerInfo server   = 1;
+}
+
+message GetAllServerInfo {
+   repeated ServerInfo servers = 1;
 }

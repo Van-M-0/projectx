@@ -15,14 +15,9 @@ import (
 var (
 	packetsizeerror = errors.New("packet size too small")
 	packetdataerror = errors.New("packet data error")
+
+	common_header_size = binary.Size(protocol.CommonHeader{})
 )
-
-
-func BinaryReadSize(reader io.Reader, buf []byte, size uint32) {
-
-}
-
-
 
 func test_parse_binary() {
 	l, err := net.Listen("tcp", "127.0.0.1:4321")
@@ -70,28 +65,54 @@ func test_parse_binary() {
 
 }
 
-func ReadPacket(conn net.Conn, pb proto.Message) ([]byte, error) {
-	hbuf := make([]byte, protocol.CommonHeaderLen)
-	_, err := io.ReadFull(conn, hbuf)
+func ReadPacket(conn net.Conn, pb proto.Message) (error) {
+	buf := make([]byte, common_header_size)
+	_, err := io.ReadFull(conn, buf)
 	if err != nil {
 		return nil, err
 	}
 
-	pbheader := protocol.CommonHeader{}
-	reader := bytes.NewReader(hbuf)
-	binary.Read(reader, binary.LittleEndian, &pbheader.Len)
-
-	datasize := pbheader.Len - uint16(protocol.CommonHeaderLen)
-	if datasize < 0 {
-		fmt.Println("read data size error", datasize)
-		return nil, packetsizeerror
+	var header protocol.CommonHeader
+	err = proto.Unmarshal(buf, header)
+	if err != nil {
+		return err
 	}
 
-	data := make([]byte, datasize)
-	if _, err := io.ReadFull(conn, data); err != nil {
-		fmt.Println("read data error")
-		return nil, packetdataerror
+	data_size := header.Len - common_header_size
+	if data_size < 0 {
+		return packetsizeerror
 	}
 
-	return data, nil
+	data := make([]byte, data_size)
+	_, err = io.ReadFull(conn, data)
+	if err != nil {
+		return err
+	}
+	err = proto.Unmarshal(data, pb)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func WritePacket(conn net.Conn, pb proto.Message, flag uint32) ([]byte, error) {
+	var pbheader protocol.CommonHeader
+	pbheader.Len = common_header_size
+	header, err := proto.Marshal(pbheader)
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := proto.Marshal(pb)
+	if err != nil {
+		return nil, err
+	}
+
+	packet := append([]byte{}, header)
+	packet = append(packet, body)
+
+	conn.Write(packet)
+
+	return packet, nil
 }

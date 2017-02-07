@@ -14,30 +14,30 @@ const (
 
 var (
 	CommonHeaderLen = binary.Size(CommonHeader{})
-	ClientHeaderLen = binary.Size(ClientHeader{})
-	ServerHeaderLen = binary.Size(ServerHeader{})
+	//ClientHeaderLen = binary.Size(ClientHeader{})
+	//ServerHeaderLen = binary.Size(ServerHeader{})
 )
 
-/*
-	CommonHeader +
-*/
-type CommonHeader struct {
-	Len 	uint16
-}
-
-type RouterHeader struct {
-	Dst 	uint8
-}
-
-type ClientHeader struct {
-	Len 	uint16
-	ver 	uint8
-	magic 	uint8
-}
-
-type ServerHeader struct {
-	Len 	uint16
-}
+///*
+//	CommonHeader +
+//*/
+//type CommonHeader struct {
+//	Len 	uint16
+//}
+//
+//type RouterHeader struct {
+//	Dst 	uint8
+//}
+//
+//type ClientHeader struct {
+//	Len 	uint16
+//	ver 	uint8
+//	magic 	uint8
+//}
+//
+//type ServerHeader struct {
+//	Len 	uint16
+//}
 
 //func EncodeHeader (d []byte) []byte {
 //	h := ClientHeader{}

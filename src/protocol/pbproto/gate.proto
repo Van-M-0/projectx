@@ -1,2 +1,5 @@
 syntax = "proto3";
 package protocol;
+
+import "base.proto";
+
