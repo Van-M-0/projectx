@@ -10,13 +10,15 @@ import (
 	"projectx/src/protocol"
 	"errors"
 	"github.com/golang/protobuf/proto"
+	"projectx/src/protocol/baseproto"
 )
 
 var (
 	packetsizeerror = errors.New("packet size too small")
+	packettypeerror = errors.New("packet proto type err")
 	packetdataerror = errors.New("packet data error")
 
-	common_header_size = binary.Size(protocol.CommonHeader{})
+	common_header_size = proto.Size(baseproto.CommonHeader{})
 )
 
 func test_parse_binary() {
@@ -65,46 +67,53 @@ func test_parse_binary() {
 
 }
 
-func ReadPacket(conn net.Conn, pb proto.Message) (error) {
+func ReadPacket(conn net.Conn) (*protocol.Message, int32, error) {
 	buf := make([]byte, common_header_size)
 	_, err := io.ReadFull(conn, buf)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	var header protocol.CommonHeader
+	var header baseproto.CommonHeader
+	header = protocol.GetProtoMessage(protocol.COMMON_HEADER)
 	err = proto.Unmarshal(buf, header)
 	if err != nil {
-		return err
+		return nil, 0, err
+	}
+
+	msg := protocol.GetProtoMessage(header.Id)
+	if msg == nil {
+		return nil, 0, packettypeerror
 	}
 
 	data_size := header.Len - common_header_size
 	if data_size < 0 {
-		return packetsizeerror
+		return nil, 0, packetsizeerror
 	}
 
 	data := make([]byte, data_size)
 	_, err = io.ReadFull(conn, data)
 	if err != nil {
-		return err
-	}
-	err = proto.Unmarshal(data, pb)
-	if err != nil {
-		return err
+		return nil, 0, err
 	}
 
-	return nil
+	err = proto.Unmarshal(data, msg)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return msg, header.Router, nil
 }
 
-func WritePacket(conn net.Conn, pb proto.Message, flag uint32) (error) {
-	var pbheader protocol.CommonHeader
-	pbheader.Len = common_header_size
-	header, err := proto.Marshal(pbheader)
+func WritePacket(conn net.Conn, msg *protocol.Message, flag uint32) (error) {
+	var header baseproto.CommonHeader
+	header.Len = common_header_size
+	header, err := proto.Marshal(header)
 	if err != nil {
 		return err
 	}
 
-	body, err := proto.Marshal(pb)
+	body, err := proto.Marshal(msg.Message)
 	if err != nil {
 		return err
 	}

@@ -1,5 +1,7 @@
 syntax = "proto3";
-package protocol;
+package baseproto;
+
+message Null {}
 
 // headers difine
 // msg = header + specialmsg
@@ -22,6 +24,6 @@ message RegisterServer {
     ServerInfo server   = 1;
 }
 
-message GetAllServerInfo {
+message AllServerInfo {
    repeated ServerInfo servers = 1;
 }

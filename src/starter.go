@@ -2,12 +2,15 @@ package main
 
 import (
 	"fmt"
-	"projectx/src/util"
+	"projectx/src/protocol"
 )
+
 
 func main() {
 	fmt.Println("main run !!")
-	util.Test_proto()
-	fmt.Print("main stop")
+	fmt.Println("main stop")
+
+	msg := protocol.GetProtoMessage(protocol.COMMON_HEADER)
+	fmt.Println("name ", msg.Name())
 }
 

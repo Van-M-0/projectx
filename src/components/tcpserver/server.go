@@ -5,11 +5,6 @@ import (
 	. "projectx/src/config"
 	"net"
 	"sync"
-	"io"
-	"encoding/binary"
-	"projectx/src/protocol"
-	"log"
-	"bytes"
 	"projectx/src/util"
 )
 
@@ -64,6 +59,11 @@ func (r *server) newconn(conn net.Conn) {
 
 func (r *server) handleio(id uint32, conn net.Conn) {
 	defer conn.Close()
+	for {
+		msg, r, err := util.ReadPacket(conn)
+		if err != nil {
 
-
+		}
+		r.q.Push(id, msg)
+	}
 }

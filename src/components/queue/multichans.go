@@ -3,6 +3,7 @@ package queue
 import (
 	"sync"
 	"fmt"
+	"projectx/src/protocol"
 )
 
 type MultiChans struct {
@@ -18,7 +19,7 @@ func NewMultiChans() *MultiChans{
 
 func (r *MultiChans) CreateChs(id uint32, size uint32) {
 	r.chslock.Lock()
-	r.chs[id] = QueueChanel{Ch:make(chan *ChannelMessage, size)}
+	r.chs[id] = QueueChanel{Ch:make(chan *protocol.Message, size)}
 	r.chslock.Unlock()
 }
 
@@ -28,22 +29,16 @@ func (r *MultiChans) ReleaseChs(id uint32) {
 	r.chslock.Unlock()
 }
 
-func (r *MultiChans) Push(id uint32, data []byte) {
-	m := &ChannelMessage{
-		Dst:data[0],
-		Id:id,
-		Data:data[1:],
-	}
+func (r *MultiChans) Push(id uint32, dst int32, msg *protocol.Message) {
 
 	r.chslock.Lock()
-	if _, ok := r.chs[m.Dst]; ok != true {
-		fmt.Println("destination error : ", m.Dst)
+	if _, ok := r.chs[dst]; ok != true {
+		fmt.Println("destination error : ", dst)
 		r.chslock.Unlock()
 		return
 	}
-	var ch chan *ChannelMessage
-	ch = r.chs[m.Dst].Ch
+	ch := r.chs[dst].Ch
 	r.chslock.Unlock()
 
-	ch <- m;
+	ch <- msg;
 }
