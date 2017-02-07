@@ -35,6 +35,7 @@ func NewGateWay() *gateway {
 func (r *gateway) Start() {
 	r.chs.CreateChs(protocol.GATEWAY, 1024)
 	r.chs.CreateChs(protocol.MASTER, 1024)
+	r.connectserver()
 	r.server.Start(r.c.TcpServerConfig)
 	r.run()
 }
@@ -52,40 +53,68 @@ func (r *gateway) run() {
 	fmt.Println("gateway run finish")
 }
 
-
-func (r *gateway) connectlobby() {
-	_, err := net.Dial("tcp", "192.168.1.1:9800")
-	if err != nil {
-		log.Fatal("connect lobby err ", err)
-	}
-
-}
-
-func (r *gateway) connectgameserver() {
-
-}
-
 func (r *gateway) connectserver() {
-	connect := func(host string) {
-		conn, err := net.Dial("tcp", host)
-		if err != nil {
-			log.Fatal("connect server err, ", host)
-		}
-		r.readfromserver(conn)
+
+	const selfinfo = &protocol.ServerInfo{
+
 	}
 
-	go connect("192.168.1.10:9910")
-}
-
-func (r *gateway) readfromserver(conn net.Conn) {
-	defer conn.Close()
-	for {
-		data, err := util.ReadPacket(conn)
+	connect := func(dsthost string, cb func()) {
+		conn, err := net.Dial("tcp", dsthost)
 		if err != nil {
-			log.Fatal("read pacekt err ", err)
+			cb(nil, err)
 		}
-		r.chs.Push(0, data)
+
+		err = util.WritePacket(conn, selfinfo, 0)
+		if err != nil {
+			cb(nil, err)
+		}
+
+		if cb != nil {
+			cb(conn, nil)
+		}
 	}
+
+	start_wait := new(util.WaitGroup)
+	var allservers protocol.GetAllServerInfo
+
+	// master
+	start_wait.DoAction(func() {
+		connect(":9090", func(conn net.Conn, err error) {
+
+		})
+	})
+
+	// lobby
+	start_wait.DoAction(func() {
+		connect(":9399", func(conn net.Conn, err error) {
+			err = util.ReadPacket(conn, &allservers)
+		})
+	})
+
+	start_wait.WaitActions()
+
+	// game servers
+	gameservers :=[]*protocol.ServerInfo{}
+	for _, server := range(allservers.Servers) {
+		if server.Type == "game server"	{
+			gameservers = append(gameservers, server)
+		}
+	}
+
+	if len(gameservers) <= 0 {
+		return
+	}
+
+	for _, gs := range(gameservers) {
+		start_wait.DoAction(func() {
+			connect(gs.Ip, func(conn net.Conn, err error) {
+
+			})
+		})
+	}
+
+	start_wait.WaitActions()
 }
 
 func (r *gateway) HandleRoutine(data []byte) {

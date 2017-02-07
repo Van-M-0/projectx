@@ -96,17 +96,17 @@ func ReadPacket(conn net.Conn, pb proto.Message) (error) {
 	return nil
 }
 
-func WritePacket(conn net.Conn, pb proto.Message, flag uint32) ([]byte, error) {
+func WritePacket(conn net.Conn, pb proto.Message, flag uint32) (error) {
 	var pbheader protocol.CommonHeader
 	pbheader.Len = common_header_size
 	header, err := proto.Marshal(pbheader)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	body, err := proto.Marshal(pb)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	packet := append([]byte{}, header)
@@ -114,5 +114,5 @@ func WritePacket(conn net.Conn, pb proto.Message, flag uint32) ([]byte, error) {
 
 	conn.Write(packet)
 
-	return packet, nil
+	return nil
 }
