@@ -6,7 +6,6 @@ import (
 	"projectx/src/components/tcpserver"
 	"fmt"
 	"net"
-	"projectx/src/util"
 	"projectx/src/protocol"
 )
 
@@ -44,10 +43,6 @@ func (r *game) run() {
 }
 
 func (r *game) OnConnect(connid int32, conn net.Conn) {
-	msg, _, err := util.ReadPacketByName(conn, "baseproto.RegisterServer")
-	if err != nil {
-
-	}
 
 }
 
