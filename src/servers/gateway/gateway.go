@@ -36,7 +36,7 @@ func NewGateWay() *gateway {
 func (r *gateway) Start() {
 	r.connectserver()
 	r.server.Start(r.c.TcpServerConfig, &tcpserver.ClientEventCallback{
-		OnConnect: func(id int32) { r.OnConnect(id)},
+		OnConnect: func(id int32, _ net.Conn) { r.OnConnect(id)},
 		OnClose: func(id int32) {r.OnClose(id)},
 		OnError: func(id int32) {r.OnError(id)},
 	})

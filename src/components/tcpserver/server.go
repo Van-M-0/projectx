@@ -56,6 +56,7 @@ func (r *server) newconn(conn net.Conn) {
 	r.cuid = r.cuid + 1
 	r.clients[r.cuid] = conn
 	r.cl.Unlock()
+	r.cb.OnConnect(r.cuid, conn)
 	r.handlein(r.cuid, conn)
 }
 

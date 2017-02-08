@@ -8,6 +8,7 @@ import (
 	"net"
 	"projectx/src/util"
 	"projectx/src/protocol"
+	"projectx/src/protocol/baseproto"
 )
 
 type GateWay interface {
@@ -32,9 +33,8 @@ func NewGateWay() *master {
 }
 
 func (r *master) Start() {
-	r.connectserver()
 	r.server.Start(r.c.TcpServerConfig, &tcpserver.ClientEventCallback{
-		OnConnect: func(id int32) { r.OnConnect(id)},
+		OnConnect: func(id int32, conn net.Conn) { r.OnConnect(id, conn)},
 		OnClose: func(id int32) {r.OnClose(id)},
 		OnError: func(id int32) {r.OnError(id)},
 	})
@@ -49,18 +49,24 @@ func (r *master) run() {
 	fmt.Println("master run finish")
 }
 
-func (r *master) registerclientrouter(id int32, size int32, serconn net.Conn) {
-	ch := r.chs.CreateChs(id, size)
-	go func() {
-		select {
-		case msg := <- ch:
-			util.WritePacket(serconn, msg, 1)
-		}
-	}()
+func (r *master) updateserverinfo(msg *baseproto.RegisterServer, add bool) {
+
 }
 
-func (r *master) OnConnect(id int32) {
+func (r *master) OnConnect(connid int32, conn net.Conn) {
+	msg, router, err := util.ReadPacketByName(conn, "baseproto.RegisterServer")
+	if err != nil {
 
+	}
+
+	server := msg.(&baseproto.RegisterServer{}).Server
+	r.updateserverinfo(server, true)
+
+	ch := r.chs.CreateChs(server.Id, 1024)
+
+	if server.Type == util.SERVER_TYPE_LOBBY {
+
+	}
 }
 
 func (r *master) OnClose(id int32) {

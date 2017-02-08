@@ -3,6 +3,7 @@ package tcpserver
 import (
 	"projectx/src/config"
 	"projectx/src/protocol"
+	"net"
 )
 
 type Client interface {
@@ -10,7 +11,7 @@ type Client interface {
 }
 
 type ClientEventCallback struct {
-	OnConnect	func(id int32)
+	OnConnect	func(id int32, conn net.Conn)
 	OnClose 	func(id int32)
 	OnError		func(id int32)
 }
@@ -27,4 +28,5 @@ type Server interface {
 	BcClients(ids []int32, msg *protocol.Message)
 	CloseClient(id int32, msg *protocol.Message)
 	ConfigureClient(id int32, cfg *ClientConnectionConfigure)
+
 }
