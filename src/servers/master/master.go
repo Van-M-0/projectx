@@ -49,21 +49,24 @@ func (r *master) run() {
 	fmt.Println("master run finish")
 }
 
-func (r *master) updateserverinfo(msg *baseproto.RegisterServer, add bool) {
+func (r *master) updateserverinfo(id int32, msg *baseproto.RegisterServer) {
+
+}
+
+func (r *master) removeserverinfo(id int32) {
 
 }
 
 func (r *master) OnConnect(connid int32, conn net.Conn) {
-	msg, router, err := util.ReadPacketByName(conn, "baseproto.RegisterServer")
+	msg, _, err := util.ReadPacketByName(conn, "baseproto.RegisterServer")
 	if err != nil {
 
 	}
 
 	server := msg.(&baseproto.RegisterServer{}).Server
-	r.updateserverinfo(server, true)
+	r.updateserverinfo(connid, server)
 
 	ch := r.chs.CreateChs(server.Id, 1024)
-
 
 	if server.Type == util.SERVER_TYPE_LOBBY {
 		r.handle_lobby(server.Id, connid, conn, ch)
@@ -92,13 +95,4 @@ func (r *master) OnClose(id int32) {
 
 func (r *master) OnError(id int32) {
 
-}
-
-func (r *master) handelbackend() {
-	for {
-		select {
-		case msg := <- r.backend:
-			msg
-		}
-	}
 }
