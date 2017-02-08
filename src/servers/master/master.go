@@ -64,9 +64,26 @@ func (r *master) OnConnect(connid int32, conn net.Conn) {
 
 	ch := r.chs.CreateChs(server.Id, 1024)
 
-	if server.Type == util.SERVER_TYPE_LOBBY {
 
+	if server.Type == util.SERVER_TYPE_LOBBY {
+		r.handle_lobby(server.Id, connid, conn, ch)
+	} else if server.Type == util.SERVER_TYPE_GATEWAY {
+		r.handle_gateway(server.Id, connid, conn, ch)
+	} else if server.Type == util.SERVER_TYPE_GAMESERVER {
+		r.handle_game_server(server.Id, connid, conn, ch)
 	}
+}
+
+func (r *master) handle_lobby(id, connid int32, conn net.Conn, ch chan *protocol.Message) {
+
+}
+
+func (r *master) handle_gateway(id, connid int32, conn net.Conn, ch chan *protocol.Message) {
+
+}
+
+func (r *master) handle_game_server(id, connid int32, conn net.Conn, ch chan *protocol.Message) {
+
 }
 
 func (r *master) OnClose(id int32) {
