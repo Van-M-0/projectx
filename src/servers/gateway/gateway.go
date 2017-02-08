@@ -6,9 +6,9 @@ import (
 	"projectx/src/components/tcpserver"
 	"fmt"
 	"net"
-	"projectx/src/protocol"
 	"projectx/src/util"
 	"projectx/src/protocol/baseproto"
+	"projectx/src/protocol"
 )
 
 type GateWay interface {
@@ -21,6 +21,7 @@ type gateway struct {
 	c         config.MasterConfig
 	server    tcpserver.Server
 	serinfos  serverlist
+	backend   chan *protocol.Message
 }
 
 func NewGateWay() *gateway {
@@ -63,17 +64,15 @@ func (r *gateway) connectserver() {
 	}
 
 	start_wait := new(util.WaitGroup)
-
 	// master
 	start_wait.DoAction(func() {
 		connect(":9090", func(conn net.Conn, err error) {
-			// register self server info
+
 			err = util.WritePacket(conn, &baseproto.RegisterServer {
 
 			}, 0)
 
-			// get all server - lists
-			msg, router, err := util.ReadPacketByName(conn, "baseproto.AllServerInfo")
+			msg, _, err := util.ReadPacketByName(conn, "baseproto.AllServerInfo")
 
 			for _, v := range (msg.(&baseproto.AllServerInfo).Servers) {
 				r.serinfos.add(&serverpeer{
@@ -83,9 +82,8 @@ func (r *gateway) connectserver() {
 					id: v.Id,
 				})
 			}
-			s := r.serinfos.getbytype(util.SERVER_TYPE_MASTER)
-			r.serinfos.setconn(s.id, conn)
-			r.chs.CreateChs(s.id, 1024)
+
+			go r.readservermsg(conn, util.SERVER_TYPE_MASTER, util.SERVER_TYPE_MASTER)
 		})
 	})
 	start_wait.WaitActions()
@@ -93,9 +91,8 @@ func (r *gateway) connectserver() {
 	// lobby
 	start_wait.DoAction(func() {
 		connect(":9399", func(conn net.Conn, err error) {
-			s := r.serinfos.getbytype(util.SERVER_TYPE_LOBBY)
-			r.serinfos.setconn(s.id, conn)
-			r.chs.CreateChs(s.id, 1024)
+			go r.readservermsg(conn, util.SERVER_TYPE_LOBBY, util.SERVER_TYPE_LOBBY)
+			r.registerclientrouter(util.SERVER_TYPE_LOBBY, 1024, conn)
 		})
 	})
 
@@ -104,19 +101,48 @@ func (r *gateway) connectserver() {
 		if server.server_type == util.SERVER_TYPE_GAMESERVER {
 			start_wait.DoAction(func() {
 				connect(server.host, func(conn net.Conn, err error) {
+
 					s := r.serinfos.getbyid(server.id)
 					r.serinfos.setconn(s.id, conn)
-					r.chs.CreateChs(s.id, 1024)
+					r.registerclientrouter(s.id, 4096, conn)
+
+					go r.readservermsg(conn, util.SERVER_TYPE_GAMESERVER, s.id)
 				})
 			})
+
 		}
 	}
 	start_wait.WaitActions()
 
-	r.chs.CreateChs(-1, 4096)
+	r.chs.CreateChs(util.SERVER_TYPE_GATEWAY, 1024)
 }
 
+func (r *gateway) registerclientrouter(id int32, size int32, conn net.Conn) {
+	ch := r.chs.CreateChs(id, size)
+	go func() {
+		select {
+		case msg := <- ch:
+			util.WritePacket(conn, msg, 1)
+		}
+	}()
+}
+
+func (r *gateway) readservermsg(conn net.Conn, t int32, id int32) {
+
+	go r.handleio()
+
+	for {
+		msg, _, err := util.ReadPacket(conn)
+		if err != nil {
+
+		}
+		r.backend <- msg
+	}
+}
 
 func (r *gateway) handleio() {
-
+	for {
+		select {
+		}
+	}
 }

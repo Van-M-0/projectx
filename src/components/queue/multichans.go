@@ -17,10 +17,11 @@ func NewMultiChans() *MultiChans{
 	}
 }
 
-func (r *MultiChans) CreateChs(id uint32, size uint32) {
+func (r *MultiChans) CreateChs(id uint32, size uint32) chan *protocol.Message{
 	r.chslock.Lock()
+	defer r.chslock.Unlock()
 	r.chs[id] = QueueChanel{Ch:make(chan *protocol.Message, size)}
-	r.chslock.Unlock()
+	return r.chs[id].Ch
 }
 
 func (r *MultiChans) ReleaseChs(id uint32) {
