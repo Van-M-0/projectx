@@ -6,6 +6,7 @@ import (
 	"net"
 	"sync"
 	"projectx/src/util"
+	"projectx/src/protocol"
 )
 
 func NewServer(q queue.MessageQueue) *server {
@@ -22,9 +23,10 @@ type server struct {
 	cl 	sync.RWMutex
 	clients map[uint32]net.Conn
 	cuid 	uint32
+	cb 	*ClientEventCallback
 }
 
-func (r *server) Start(c TcpServerConfig) bool {
+func (r *server) Start(c TcpServerConfig, cb *ClientEventCallback) bool {
 	l, err := net.Listen("tcp", c.Host)
 	if err != nil {
 		return false
@@ -54,16 +56,32 @@ func (r *server) newconn(conn net.Conn) {
 	r.cuid = r.cuid + 1
 	r.clients[r.cuid] = conn
 	r.cl.Unlock()
-	r.handleio(r.cuid, conn)
+	r.handlein(r.cuid, conn)
 }
 
-func (r *server) handleio(id uint32, conn net.Conn) {
+func (r *server) handlein(id uint32, conn net.Conn) {
 	defer conn.Close()
 	for {
-		msg, r, err := util.ReadPacket(conn)
+		msg, router, err := util.ReadPacket(conn)
 		if err != nil {
 
 		}
-		r.q.Push(id, msg)
+		r.q.Push(id, id, msg)
 	}
+}
+
+func (r *server) SendClient(id int32, msg *protocol.Message) {
+
+}
+
+func (r *server) BcClients(ids []int32, msg *protocol.Message) {
+
+}
+
+func (r *server) CloseClient(id int32, msg *protocol.Message) {
+
+}
+
+func (r *server) ConfigureClient(id int32, cfg *ClientConnectionConfigure) {
+
 }

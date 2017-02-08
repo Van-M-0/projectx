@@ -35,7 +35,11 @@ func NewGateWay() *gateway {
 
 func (r *gateway) Start() {
 	r.connectserver()
-	r.server.Start(r.c.TcpServerConfig)
+	r.server.Start(r.c.TcpServerConfig, &tcpserver.ClientEventCallback{
+		OnConnect: func(id int32) { r.OnConnect(id)},
+		OnClose: func(id int32) {r.OnClose(id)},
+		OnError: func(id int32) {r.OnError(id)},
+	})
 	r.run()
 }
 
@@ -45,7 +49,7 @@ func (r *gateway) Stop() {
 
 func (r *gateway) run() {
 	for {
-		r.handleio()
+		r.handelbackend()
 	}
 	fmt.Println("gateway run finish")
 }
@@ -117,19 +121,19 @@ func (r *gateway) connectserver() {
 	r.chs.CreateChs(util.SERVER_TYPE_GATEWAY, 1024)
 }
 
-func (r *gateway) registerclientrouter(id int32, size int32, conn net.Conn) {
+func (r *gateway) registerclientrouter(id int32, size int32, serconn net.Conn) {
 	ch := r.chs.CreateChs(id, size)
 	go func() {
 		select {
 		case msg := <- ch:
-			util.WritePacket(conn, msg, 1)
+			util.WritePacket(serconn, msg, 1)
 		}
 	}()
 }
 
 func (r *gateway) readservermsg(conn net.Conn, t int32, id int32) {
 
-	go r.handleio()
+	go r.handelbackend()
 
 	for {
 		msg, _, err := util.ReadPacket(conn)
@@ -140,9 +144,23 @@ func (r *gateway) readservermsg(conn net.Conn, t int32, id int32) {
 	}
 }
 
-func (r *gateway) handleio() {
+func (r *gateway) OnConnect(id int32) {
+
+}
+
+func (r *gateway) OnClose(id int32) {
+
+}
+
+func (r *gateway) OnError(id int32) {
+
+}
+
+func (r *gateway) handelbackend() {
 	for {
 		select {
+		case msg := <- r.backend:
+			msg
 		}
 	}
 }
