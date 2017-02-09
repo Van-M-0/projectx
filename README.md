@@ -22,4 +22,4 @@ protoc [options] [protofiles]
 message queue 
 [shortcut](http://www.enterpriseintegrationpatterns.com/patterns/messaging/toc.html)
 [pattens](http://www.enterpriseintegrationpatterns.com/patterns/messaging/)
-
+[courses](http://www.enterpriseintegrationpatterns.com/docs/jaoo_hohpeg_enterpriseintegrationpatterns.pdf)
