@@ -18,3 +18,8 @@ protobuf 生成过程
 protoc [options] [protofiles]
 
 
+
+message queue 
+[shortcut](http://www.enterpriseintegrationpatterns.com/patterns/messaging/toc.html)
+[pattens](http://www.enterpriseintegrationpatterns.com/patterns/messaging/)
+
